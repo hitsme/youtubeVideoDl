@@ -12,6 +12,8 @@ import datetime
 import time
 from getNetworkIp import getNetWorkIp
 import traceback
+from youtubeDLTools import isCanDownload
+from youtubeDLTools import randomDelete
 reload(sys)
 sys.setdefaultencoding("utf-8")
 class initParam:
@@ -105,6 +107,8 @@ def writeDownloadLog(videotitle):
 def selectVideoResToDL(videoUrl,videotitle,fornumname):
     #init table Download_log
     print 'Download starting'
+    if isCanDownload()==False:
+        randomDelete()
     #initDownloadLog()
     db=getConnectDB()
     cursor=db.cursor()
