@@ -10,10 +10,12 @@ from DBDao import initScrapyRecord
 from DBDao import initDownloadLog
 import datetime
 import time
+import uuid
 from getNetworkIp import getNetWorkIp
 import traceback
 from youtubeDLTools import isCanDownload
 from youtubeDLTools import randomDelete
+from youtubeDLTools import isNewDirPath
 reload(sys)
 sys.setdefaultencoding("utf-8")
 class initParam:
@@ -21,9 +23,9 @@ class initParam:
     def __init__(self,channelUrl,fornumname):
         self.channelUrl=channelUrl
         self.fornumname=fornumname
-def getContent(videotitle):
+def getContent(videotitle,fornumid):
     #缤纷花食，悄悄挖掘玫瑰的不同吃法[mp4]http://45.62.226.188/缤纷花食，悄悄挖掘玫瑰的不同吃法.mp4[/mp4]
-    return str(videotitle)+"[mp4]http://"+getNetWorkIp()+'/videosource/'+str(videotitle)+'.mp4[/mp4]'
+    return str(videotitle)+"[mp4]http://"+getNetWorkIp()+'/videosource/'+str(fornumid)+'/'+str(videotitle)+'.mp4[/mp4]'
 def getTid(cursor):
     cursor.execute('select tid from pre_forum_post order by tid desc limit 0,1')
     return cursor.fetchone()[0]
@@ -58,7 +60,7 @@ def publishWebsite(fornumname,videotitle):
                                                          "%s","%s","%s","%s","%s",
                                                          "%s","%s")"""
                                                   %(lastPid,fid,tid,'1','admin',
-                                                    '1',videotitle,str(timeminute),getContent(videotitle),'127.0.0.1',
+                                                    '1',videotitle,str(timeminute),getContent(videotitle,fid),'127.0.0.1',
                                                     '740','0','0','1','0',
                                                     '0','-1','0','0','0',
                                                     '0','1'))
@@ -81,15 +83,16 @@ VALUES("%s" ,"%s", 0, 0, 0, 0, 0, 'admin', 1, "%s","%s", "%s", "admin", 1, 0, 0,
         db.close()
     return
 
-def writeDownloadLog(videotitle):
+def writeDownloadLog(fornumid,fornumname,videotitle):
     db=getConnectDB()
     cursor=db.cursor()
+    videoid=str(uuid.uuid1())
     try:
         dldate=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print """insert into download_log(videotitle,videofilename,downloaddate)
- values("%s","%s","%s")"""%(videotitle,videotitle+'.mp4',str(dldate))
-        cursor.execute("""insert into download_log(videotitle,videofilename,downloaddate)
- values("%s","%s","%s")"""%(videotitle,videotitle+'.mp4',str(dldate)))
+        print """insert into download_log(videoid,videotitle,videofilename,fornumname,fornumid,downloaddate)
+ values("%s","%s","%s","%s","%s","%s")"""%(videoid,videotitle,'/www/wwwroot/youtube.club/upload/videosource/'+str(fornumid)+'/'+videotitle+'.mp4',fornumname,fornumid,str(dldate))
+        cursor.execute("""insert into download_log(videoid,videotitle,videofilename,fornumname,fornumid,downloaddate)
+ values("%s","%s","%s","%s","%s","%s")"""%(videoid,videotitle,'/www/wwwroot/youtube.club/upload/videosource/'+str(fornumid)+'/'+videotitle+'.mp4',fornumname,fornumid,str(dldate)))
 
         db.commit()
     except Exception, e:
@@ -109,17 +112,20 @@ def selectVideoResToDL(videoUrl,videotitle,fornumname):
     print 'Download starting'
     if isCanDownload()==False:
         randomDelete()
+        print 'hello---------------------------'
     #initDownloadLog()
     db=getConnectDB()
     cursor=db.cursor()
     cursor.execute('select count(*) from download_log where videotitle="'+videotitle+'"')
     count=cursor.fetchone()[0]
     if count==0:
+        isNewDirPath(str(getFid(cursor,fornumname)))
         yt720p = YouTube(videoUrl).streams.filter(res='720p')
         if yt720p.first() != None:
             print videotitle+".mp4(720p) download starting"
-            yt720p.first().download()
-            writeDownloadLog(videotitle)
+
+            yt720p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)))
+            writeDownloadLog(getFid(cursor,fornumname),fornumname,videotitle)
             #push website
             publishWebsite(fornumname,videotitle)
             # push website end
@@ -127,8 +133,8 @@ def selectVideoResToDL(videoUrl,videotitle,fornumname):
             yt360p = YouTube(videoUrl).streams.filter(res='360p')
             if yt360p.first() != None:
                 print videotitle + ".mp4(360p) download starting"
-                yt360p.first().download()
-                writeDownloadLog(videotitle)
+                yt360p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)))
+                writeDownloadLog(getFid(cursor, fornumname), fornumname, videotitle)
                 # push website
                 publishWebsite(fornumname, videotitle)
                 # push website end
@@ -136,8 +142,8 @@ def selectVideoResToDL(videoUrl,videotitle,fornumname):
                 yt240p = YouTube(videoUrl).streams.filter(res='240p')
                 if (yt240p != None):
                     print videotitle + ".mp4(360p) download starting"
-                    yt240p.first().download()
-                    writeDownloadLog(videotitle)
+                    yt240p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)))
+                    writeDownloadLog(getFid(cursor, fornumname), fornumname, videotitle)
                     # push website
                     publishWebsite(fornumname, videotitle)
                     # push website end
@@ -145,8 +151,8 @@ def selectVideoResToDL(videoUrl,videotitle,fornumname):
                     yt144p = YouTube(videoUrl).streams.filter(res='144p')
                     if yt144p != None:
                         print videotitle + ".mp4(144p) download starting"
-                        yt144p.first().download()
-                        writeDownloadLog(videotitle)
+                        yt144p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)))
+                        writeDownloadLog(getFid(cursor, fornumname), fornumname, videotitle)
                         # push website
                         publishWebsite(fornumname, videotitle)
                         # push website end
@@ -154,7 +160,7 @@ def selectVideoResToDL(videoUrl,videotitle,fornumname):
     return
 #pl = Playlist("https://www.youtube.com/watch?v=pkGU-g3WFR8&list=PLaO-FUd5lsPVQxhdUTGCVYWjJO2lfi_tw")
 #pl.download_all()
-#YouTube('https://youtu.be/9bZkp7q19f0').streams.first().download()
+#YouTube('https://youtu.be/9bZkp7q19f0').streams.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+getFid(cursor,fornumname))
 #initDownloadLog()
 #initScrapyRecord()
 db=getConnectDB()
@@ -163,6 +169,7 @@ cursor.execute("""select scrapyUrl,fornumname from Scrapy_Record where isEnable=
 scrapyRcdlst=cursor.fetchall()
 for scrapyRcd in scrapyRcdlst:
     #"https://www.youtube.com/channel/UCoC47do520os_4DBMEFGg4A/videos"
+    print str(scrapyRcd[0])
     reponse = urllib2.urlopen(str(scrapyRcd[0]))
     htmlstr = reponse.read()
     soup = BeautifulSoup(htmlstr, 'lxml')
@@ -188,7 +195,7 @@ for scrapyRcd in scrapyRcdlst:
 #VIEWSTATE =re.findall(r'<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="(.*?)" />', htmlstr,re.I)
 #print reponse.read().decode('utf-8')
 #yt=YouTube('https://www.youtube.com/watch?v=zXAqw0Vzr4w').streams.filter(res='1080p',su)
-#yt.first().download()
+#yt.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+getFid(cursor,fornumname))
 #yt = YouTube('https://www.youtube.com/watch?v=zXAqw0Vzr4w')
 #yt.streams.all
 # or if you want to download in a specific directory

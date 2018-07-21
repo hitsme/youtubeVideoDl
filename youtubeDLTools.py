@@ -16,14 +16,22 @@ def randomDelete():
     print 'starting random delete videosource'
     db=getConnectDB()
     cursor=db.cursor()
-    cursor.execute('''select videofilename from download_log where isdelete is null  ORDER BY downloaddate asc LIMIT 0,15''')
-    delList=cursor.fetchall()
-    for i in delList:
+    db.execute('''select DISTINCT fornumid from download_log''')
+    fidList=cursor.fetchall();
+    for j in fidList:
+     cursor.execute('''select videofilename from download_log where fornumid="%s" and isdelete is null  ORDER BY downloaddate asc LIMIT 0,2'''%j[0])
+     delList=cursor.fetchall()
+     for i in delList:
       print 'delete '+str(i[0])
-      os.system('rm -rf /www/wwwroot/youtube.club/upload/videosource/'+str(i[0]))
+      os.remove(str(i[0]))
       cursor.execute('update download_log set isDelete="1" where videofilename="'+str(i[0])+'"')
       db.commit()
 
-if isCanDownload()==False:
-    randomDelete()
+def isNewDirPath(fornumid):
+    if os.path.exists('/www/wwwroot/youtube.club/upload/videosource/'+fornumid):
+        return
+    else:
+        os.mkdir('/www/wwwroot/youtube.club/upload/videosource/'+fornumid)
+        return
+
 

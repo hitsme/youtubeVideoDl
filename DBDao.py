@@ -7,7 +7,7 @@ def getConnectDB():
 def initDownloadLog():
     db=getConnectDB()
     cursor=db.cursor()
-    createSql="""create table if not exists download_log(videotitle TEXT,videofilename Text,downloaddate datetime,isDelete char(5))
+    createSql="""create table if not exists download_log(videoid varchar(50) not null primary key ,videotitle TEXT,videofilename Text,downloaddate datetime,fornumname,fornumid,isDelete char(5))
     """
     cursor.execute(createSql)
     db.commit()
