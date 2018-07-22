@@ -23,9 +23,9 @@ class initParam:
     def __init__(self,channelUrl,fornumname):
         self.channelUrl=channelUrl
         self.fornumname=fornumname
-def getContent(videotitle,fornumid):
+def getContent(videoid,videotitle,fornumid):
     #缤纷花食，悄悄挖掘玫瑰的不同吃法[mp4]http://45.62.226.188/缤纷花食，悄悄挖掘玫瑰的不同吃法.mp4[/mp4]
-    return str(videotitle)+"[mp4]http://"+getNetWorkIp()+'/videosource/'+str(fornumid)+'/'+str(videotitle)+'.mp4[/mp4]'
+    return str(videotitle)+"[mp4]http://"+getNetWorkIp()+'/videosource/'+str(fornumid)+'/'+str(videoid)+'.mp4[/mp4]'
 def getTid(cursor):
     cursor.execute('select tid from pre_forum_post order by tid desc limit 0,1')
     return cursor.fetchone()[0]
@@ -37,7 +37,7 @@ def getFid(cursor,fornumname):
         return fid
     except:
         print 'function getFid() error'
-def publishWebsite(fornumname,videotitle):
+def publishWebsite(videoid,fornumname,videotitle):
     db=getConnectDB()
     cursor=db.cursor()
     try:
@@ -60,7 +60,7 @@ def publishWebsite(fornumname,videotitle):
                                                          "%s","%s","%s","%s","%s",
                                                          "%s","%s")"""
                                                   %(lastPid,fid,tid,'1','admin',
-                                                    '1',videotitle,str(timeminute),getContent(videotitle,fid),'127.0.0.1',
+                                                    '1',videotitle,str(timeminute),getContent(videoid,videotitle,fid),'127.0.0.1',
                                                     '740','0','0','1','0',
                                                     '0','-1','0','0','0',
                                                     '0','1'))
@@ -83,16 +83,15 @@ VALUES("%s" ,"%s", 0, 0, 0, 0, 0, 'admin', 1, "%s","%s", "%s", "admin", 1, 0, 0,
         db.close()
     return
 
-def writeDownloadLog(fornumid,fornumname,videotitle):
+def writeDownloadLog(videoid,fornumid,fornumname,videotitle):
     db=getConnectDB()
     cursor=db.cursor()
-    videoid=str(uuid.uuid1())
     try:
         dldate=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print """insert into download_log(videoid,videotitle,videofilename,fornumname,fornumid,downloaddate)
- values("%s","%s","%s","%s","%s","%s")"""%(videoid,videotitle,'/www/wwwroot/youtube.club/upload/videosource/'+str(fornumid)+'/'+videotitle+'.mp4',fornumname,fornumid,str(dldate))
+ values("%s","%s","%s","%s","%s","%s")"""%(videoid,videotitle,'/www/wwwroot/youtube.club/upload/videosource/'+str(fornumid)+'/'+videoid+'.mp4',fornumname,fornumid,str(dldate))
         cursor.execute("""insert into download_log(videoid,videotitle,videofilename,fornumname,fornumid,downloaddate)
- values("%s","%s","%s","%s","%s","%s")"""%(videoid,videotitle,'/www/wwwroot/youtube.club/upload/videosource/'+str(fornumid)+'/'+videotitle+'.mp4',fornumname,fornumid,str(dldate)))
+ values("%s","%s","%s","%s","%s","%s")"""%(videoid,videotitle,'/www/wwwroot/youtube.club/upload/videosource/'+str(fornumid)+'/'+videoid+'.mp4',fornumname,fornumid,str(dldate)))
 
         db.commit()
     except Exception, e:
@@ -119,21 +118,22 @@ def selectVideoResToDL(videoUrl,videotitle,fornumname):
     cursor.execute('select count(*) from download_log where videotitle="'+videotitle+'"')
     count=cursor.fetchone()[0]
     if count==0:
+        videoid = str(uuid.uuid1())
         isNewDirPath(str(getFid(cursor,fornumname)))
         yt720p = YouTube(videoUrl).streams.filter(res='720p')
         if yt720p.first() != None:
             print videotitle+".mp4(720p) download starting"
 
-            yt720p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)))
-            writeDownloadLog(getFid(cursor,fornumname),fornumname,videotitle)
+            yt720p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)),filename=str(videoid))
+            writeDownloadLog(videoid,getFid(cursor,fornumname),fornumname,videotitle)
             #push website
-            publishWebsite(fornumname,videotitle)
+            publishWebsite(videoid,fornumname,videotitle)
             # push website end
         else:
             yt360p = YouTube(videoUrl).streams.filter(res='360p')
             if yt360p.first() != None:
                 print videotitle + ".mp4(360p) download starting"
-                yt360p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)))
+                yt360p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)),filename=str(videoid))
                 writeDownloadLog(getFid(cursor, fornumname), fornumname, videotitle)
                 # push website
                 publishWebsite(fornumname, videotitle)
@@ -142,7 +142,7 @@ def selectVideoResToDL(videoUrl,videotitle,fornumname):
                 yt240p = YouTube(videoUrl).streams.filter(res='240p')
                 if (yt240p != None):
                     print videotitle + ".mp4(360p) download starting"
-                    yt240p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)))
+                    yt240p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)),filename=str(videoid))
                     writeDownloadLog(getFid(cursor, fornumname), fornumname, videotitle)
                     # push website
                     publishWebsite(fornumname, videotitle)
@@ -151,7 +151,7 @@ def selectVideoResToDL(videoUrl,videotitle,fornumname):
                     yt144p = YouTube(videoUrl).streams.filter(res='144p')
                     if yt144p != None:
                         print videotitle + ".mp4(144p) download starting"
-                        yt144p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)))
+                        yt144p.first().download(output_path='/www/wwwroot/youtube.club/upload/videosource/'+str(getFid(cursor,fornumname)),filename=str(videoid))
                         writeDownloadLog(getFid(cursor, fornumname), fornumname, videotitle)
                         # push website
                         publishWebsite(fornumname, videotitle)
