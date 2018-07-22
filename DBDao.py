@@ -2,7 +2,7 @@
 #-*- coding:UTF-8 -*-
 import MySQLdb
 def getConnectDB():
-    db=MySQLdb.connect('127.0.0.1','root','a3a7bb21f6b34339','youtubeclub',charset='utf8')
+    db=MySQLdb.connect('127.0.0.1','root','demo','youtubeclub',charset='utf8')
     return db
 def initDownloadLog():
     db=getConnectDB()
