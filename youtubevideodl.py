@@ -169,7 +169,7 @@ cursor.execute("""select scrapyUrl,fornumname from Scrapy_Record where isEnable=
 scrapyRcdlst=cursor.fetchall()
 for scrapyRcd in scrapyRcdlst:
     #"https://www.youtube.com/channel/UCoC47do520os_4DBMEFGg4A/videos"
-    print str(scrapyRcd[0])
+    print str(scrapyRcd[1])
     reponse = urllib2.urlopen(str(scrapyRcd[0]))
     htmlstr = reponse.read()
     soup = BeautifulSoup(htmlstr, 'lxml')
@@ -179,7 +179,8 @@ for scrapyRcd in scrapyRcdlst:
                            class_="yt-uix-sessionlink yt-uix-tile-link spf-link yt-ui-ellipsis yt-ui-ellipsis-2"):
         #print i
         hrefvalue = re.findall(r'href="(.*?)" rel="nofollow" title="(.*?)"', str(i), re.I)
-        #print hrefvalue[0][1]
+        print hrefvalue[0][0]
+        print hrefvalue[0][1]
         # yt=YouTube(hrefvalue[0]).streams.filter(res='1080p',audio_codec='mp4a.40.2')
         # yt = YouTube(hrefvalue[0]).streams.filter(res='720p')
         # begin download

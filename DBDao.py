@@ -1,6 +1,6 @@
 #!usr/bin/python
 #-*- coding:UTF-8 -*-
-import MySQLdb
+import pymysql as MySQLdb
 def getConnectDB():
     db=MySQLdb.connect('127.0.0.1','root','demo','youtubeclub',charset='utf8')
     return db
